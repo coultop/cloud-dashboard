@@ -1,0 +1,34 @@
+services:
+  cloud-dashboard:
+    build:
+      context: ./cloud-dashboard-main
+      dockerfile: Dockerfile
+      args:
+        # 构建基础镜像；国内网络可换成镜像站，例如 docker.m.daocloud.io/library/node:22-bookworm-slim
+        NODE_IMAGE: ${NODE_IMAGE:-node:22-bookworm-slim}
+    image: cloud-dashboard:multi
+    container_name: cloud-dashboard
+    restart: unless-stopped
+    ports:
+      # 默认只绑回环：面板本身不带登录，别直接裸露到公网。
+      # 需要局域网访问时改成 "8555:8555"，并自行加反代鉴权 / 防火墙白名单。
+      - "127.0.0.1:8555:8555"
+      - "127.0.0.1:8566:8566" # 云电脑服务，仅宿主回环，供 8555 内部调用
+      - "127.0.0.1:8577:8577" # 云手机服务，仅宿主回环，供 8555 内部调用
+    environment:
+      - TZ=Asia/Shanghai
+      - DATA_ROOT=/data
+      # /api/config/export|import 的口令闸门（备份里含明文密码）：只认请求头 X-Export-Pass。
+      # 生产环境请在 .env 里设置随机值：echo "EXPORT_PASS=$(openssl rand -base64 18)" >> .env
+      - EXPORT_PASS=${EXPORT_PASS:-change-me}
+      # 恢复登录校验（默认 0 = 免登录，仅内网使用）
+      # - LOCAL_NOAUTH=0
+    volumes:
+      - ./data:/data
+    mem_limit: 1024m
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:8555/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s

@@ -1,0 +1,501 @@
+/* ============================================================================
+ * style-v4.css —— 视觉增强层（在 style.css / style-v3.css 之后加载，只覆盖不改旧规则）
+ * 目标：卡片化 / 玻璃质感 / 渐变与泛光 / 动效 / 可交互反馈；保留全部既有语义与布局契约
+ * 回滚：删掉 index.html 里这一行 <link> 即回到 v3
+ * ==========================================================================*/
+:root{
+  --v4-grad-brand:linear-gradient(135deg,#6366f1 0%,#3b82f6 52%,#06b6d4 100%);
+  --v4-grad-sheen:linear-gradient(180deg,rgba(255,255,255,.92),rgba(248,250,252,.86));
+  --v4-grad-edge:linear-gradient(135deg,rgba(99,102,241,.55),rgba(59,130,246,.35) 45%,rgba(6,182,212,.5));
+  --v4-glass:rgba(255,255,255,.72);
+  --v4-glow-sm:0 6px 18px -10px rgba(59,130,246,.45);
+  --v4-glow-md:0 16px 34px -18px rgba(59,130,246,.55);
+  --v4-glow-lg:0 26px 60px -28px rgba(79,70,229,.5);
+  --v4-ring:0 0 0 3px rgba(99,102,241,.22);
+  --v4-ease:cubic-bezier(.22,.61,.36,1);
+  --v4-dur:.28s;
+}
+
+/* ---- 背景氛围：两团低饱和光晕，仅装饰、不吃点击 ---- */
+body::before{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(680px 420px at 12% -6%,rgba(99,102,241,.12),transparent 70%),
+    radial-gradient(760px 460px at 96% 4%,rgba(6,182,212,.12),transparent 72%),
+    radial-gradient(600px 400px at 50% 104%,rgba(59,130,246,.08),transparent 70%);
+}
+body>*{position:relative;z-index:1}
+
+/* ---- 顶栏：玻璃 + 渐变细边 ---- */
+header{
+  background:var(--v4-glass)!important;
+  -webkit-backdrop-filter:saturate(180%) blur(16px);backdrop-filter:saturate(180%) blur(16px);
+  border-bottom:1px solid rgba(226,232,240,.9)!important;
+  box-shadow:0 6px 24px -22px rgba(15,23,42,.5);
+}
+header::after{
+  content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;
+  background:var(--v4-grad-brand);opacity:.55;
+}
+
+/* ---- 页签条：玻璃胶囊 + 渐变激活态 ---- */
+.page-tabs{
+  background:rgba(255,255,255,.66)!important;
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  border-bottom:1px solid rgba(226,232,240,.8);
+}
+.view-switch .btn,.view-switch button{transition:transform var(--v4-dur) var(--v4-ease),box-shadow var(--v4-dur) var(--v4-ease),color var(--v4-dur)}
+.view-switch .btn.active,.view-switch button.active,#main-view-switch button.active{
+  background:var(--v4-grad-brand)!important;color:#fff!important;border-color:transparent!important;
+  box-shadow:var(--v4-glow-sm),inset 0 1px 0 rgba(255,255,255,.35);
+}
+.view-switch .btn:hover,.view-switch button:hover{transform:translateY(-1px)}
+
+/* ---- 卡片：玻璃渐变 + 悬停浮起 + 边缘泛光 ---- */
+.ov-card,.board-section,.ov-kpi{
+  background:var(--v4-grad-sheen)!important;
+  border:1px solid rgba(226,232,240,.9)!important;
+  box-shadow:0 1px 2px rgba(15,23,42,.04),0 12px 28px -26px rgba(15,23,42,.45);
+  transition:transform var(--v4-dur) var(--v4-ease),box-shadow var(--v4-dur) var(--v4-ease),border-color var(--v4-dur);
+}
+.ov-card{position:relative;overflow:hidden}
+.ov-card::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:var(--v4-grad-edge);opacity:0;transition:opacity var(--v4-dur);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;padding:1px;
+}
+.ov-card:hover,.ov-kpi:hover{transform:translateY(-2px);box-shadow:var(--v4-glow-md);border-color:rgba(191,219,254,.95)!important}
+.ov-card:hover::after{opacity:1}
+
+/* ---- KPI：数字泛光 + 顶部渐变条 + 入场动效 ---- */
+.ov-kpi{position:relative;overflow:hidden}
+.ov-kpi::before{
+  content:"";position:absolute;left:0;right:0;top:0;height:3px;
+  background:var(--v4-grad-brand);opacity:.85;
+}
+.ov-kpi::after{
+  content:"";position:absolute;right:-30px;top:-40px;width:120px;height:120px;border-radius:50%;
+  background:radial-gradient(circle,rgba(59,130,246,.18),transparent 70%);
+  transition:transform .5s var(--v4-ease);
+}
+.ov-kpi:hover::after{transform:scale(1.25)}
+.ov-kpi-value{transition:color var(--v4-dur)}
+.ov-kpi-value.v4-bump{animation:v4-bump .42s var(--v4-ease)}
+@keyframes v4-bump{0%{transform:scale(.94);opacity:.55}60%{transform:scale(1.04)}100%{transform:scale(1);opacity:1}}
+
+/* ---- 状态分布：环形图 + 图例 + 堆叠条 ---- */
+.ov-status-body{display:flex;align-items:center;gap:22px;flex-wrap:wrap;padding:18px 20px 20px}
+.ov-donut{
+  --v4-donut:conic-gradient(#e2e8f0 0 360deg);
+  width:132px;height:132px;border-radius:50%;flex:0 0 auto;position:relative;
+  background:var(--v4-donut);
+  box-shadow:inset 0 0 0 1px rgba(226,232,240,.9),var(--v4-glow-sm);
+  animation:v4-donut-in .6s var(--v4-ease) both;
+}
+@keyframes v4-donut-in{from{transform:rotate(-90deg) scale(.86);opacity:0}to{transform:none;opacity:1}}
+.ov-donut::after{
+  content:"";position:absolute;inset:14px;border-radius:50%;
+  background:linear-gradient(180deg,#fff,#f8fafc);
+  box-shadow:inset 0 1px 2px rgba(15,23,42,.06);
+}
+.ov-donut-center{
+  position:absolute;inset:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:1;font-variant-numeric:tabular-nums;line-height:1.15;
+}
+.ov-donut-center b{font-size:24px;font-weight:800;color:#0f172a;letter-spacing:-.5px}
+.ov-donut-center span{font-size:11px;color:#64748b}
+.ov-legend{display:flex;flex-direction:column;gap:9px;min-width:190px;flex:1 1 190px}
+.ov-legend-row{display:flex;align-items:center;gap:9px;font-size:12.5px;color:#334155}
+.ov-legend-dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto;box-shadow:0 0 0 3px rgba(148,163,184,.14)}
+.ov-legend-row b{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:700;color:#0f172a}
+.ov-legend-bar{height:8px;border-radius:99px;background:#eef2f7;overflow:hidden;display:flex;margin-top:4px}
+.ov-legend-bar>i{display:block;height:100%;transition:width .55s var(--v4-ease)}
+.ov-legend-caption{font-size:11.5px;color:#64748b}
+
+/* ---- 表格：行悬停渐变 + 左侧强调条 + 逐行入场 ---- */
+#board-table tbody tr.board-row,#ov-account-table tbody tr{
+  transition:background var(--v4-dur) var(--v4-ease),box-shadow var(--v4-dur) var(--v4-ease);
+}
+#board-table tbody tr.board-row{position:relative}
+#board-table tbody tr.board-row>td:first-child{box-shadow:inset 3px 0 0 transparent;transition:box-shadow var(--v4-dur)}
+#board-table tbody tr.board-row:hover{background:linear-gradient(90deg,rgba(239,246,255,.9),rgba(248,250,252,.6))}
+#board-table tbody tr.board-row:hover>td:first-child{box-shadow:inset 3px 0 0 #3b82f6}
+#board-table tbody tr.board-row:nth-child(-n+12){animation:v4-row-in .34s var(--v4-ease) both}
+#board-table tbody tr.board-row:nth-child(2){animation-delay:.02s}
+#board-table tbody tr.board-row:nth-child(3){animation-delay:.04s}
+#board-table tbody tr.board-row:nth-child(4){animation-delay:.06s}
+#board-table tbody tr.board-row:nth-child(5){animation-delay:.08s}
+#board-table tbody tr.board-row:nth-child(6){animation-delay:.1s}
+@keyframes v4-row-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* 分组头：玻璃 + 左侧渐变 mark */
+tr.board-group-row{
+  background:linear-gradient(90deg,rgba(239,246,255,.85),rgba(255,255,255,.5))!important;
+  box-shadow:inset 3px 0 0 rgba(59,130,246,.55);
+}
+
+/* ---- 按钮：渐变主钮 + 悬浮 + 按下 + 涟漪 ---- */
+.btn,.btn-refresh,.sidebar-btn,.modal-btn{position:relative;overflow:hidden;transition:transform .16s var(--v4-ease),box-shadow var(--v4-dur),filter var(--v4-dur)}
+.btn:hover,.btn-refresh:hover,.sidebar-btn:hover,.modal-btn:hover{transform:translateY(-1px);box-shadow:var(--v4-glow-sm)}
+.btn:active,.btn-refresh:active,.sidebar-btn:active,.modal-btn:active{transform:translateY(0) scale(.985)}
+.btn-primary,.btn.btn-primary,#board-refresh-btn{background-image:var(--v4-grad-brand);border-color:transparent;color:#fff}
+.btn-primary:hover,#board-refresh-btn:hover{filter:saturate(115%) brightness(1.03)}
+.board-mini-btn{transition:transform .16s var(--v4-ease),background .2s,box-shadow .2s}
+.board-mini-btn:hover{transform:translateY(-1px);box-shadow:var(--v4-glow-sm);background:#eff6ff}
+.v4-ripple{position:absolute;border-radius:50%;transform:scale(0);background:rgba(255,255,255,.55);pointer-events:none;animation:v4-ripple .6s ease-out forwards}
+.board-mini-btn .v4-ripple,.btn-ghost .v4-ripple{background:rgba(59,130,246,.25)}
+@keyframes v4-ripple{to{transform:scale(2.6);opacity:0}}
+
+/* ---- 状态点：保活中呼吸脉冲 ---- */
+.pill-ok,.pill-keeping,.board-status-dot{position:relative}
+.v4-live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;margin-right:6px;vertical-align:middle;box-shadow:0 0 0 0 rgba(34,197,94,.5);animation:v4-pulse 2.2s infinite}
+@keyframes v4-pulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.45)}70%{box-shadow:0 0 0 7px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+
+/* ---- 抽屉 / 弹窗 / toast：玻璃 + 位移动效 ---- */
+.drawer-overlay{-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);background:rgba(15,23,42,.32)!important}
+.drawer{background:linear-gradient(180deg,#fff,rgba(248,250,252,.96))!important;box-shadow:-30px 0 70px -30px rgba(15,23,42,.45)!important;animation:v4-drawer-in .32s var(--v4-ease)}
+@keyframes v4-drawer-in{from{transform:translateX(28px);opacity:.4}to{transform:none;opacity:1}}
+.modal{-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);background:rgba(255,255,255,.94)!important;box-shadow:0 40px 90px -40px rgba(15,23,42,.6)!important;animation:v4-modal-in .26s var(--v4-ease)}
+@keyframes v4-modal-in{from{transform:translateY(10px) scale(.985);opacity:0}to{transform:none;opacity:1}}
+.toast{background:rgba(15,23,42,.9)!important;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 18px 40px -22px rgba(15,23,42,.7);animation:v4-toast-in .3s var(--v4-ease)}
+@keyframes v4-toast-in{from{transform:translateX(14px);opacity:0}to{transform:none;opacity:1}}
+
+/* ---- 资源表：表格 / 卡片双视图 ---- */
+.v4-view-toggle{min-width:96px}
+body.board-cards #board-table{min-width:0;display:block;table-layout:auto}
+body.board-cards #board-table thead{display:none}
+body.board-cards #board-table tbody{display:grid;grid-template-columns:repeat(auto-fill,minmax(304px,1fr));gap:14px;padding:14px}
+body.board-cards #board-table tr.board-group-row{display:block;grid-column:1/-1;border-radius:14px;padding:10px 14px}
+body.board-cards #board-table tr.board-group-row>td{display:block;border:0;padding:0}
+body.board-cards #board-table tr.board-row{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 14px;align-items:start;
+  padding:14px 16px 12px;border-radius:16px;background:linear-gradient(180deg,#fff,rgba(248,250,252,.92));
+  border:1px solid rgba(226,232,240,.95);box-shadow:0 1px 2px rgba(15,23,42,.04),0 14px 30px -28px rgba(15,23,42,.5);
+  transition:transform var(--v4-dur) var(--v4-ease),box-shadow var(--v4-dur) var(--v4-ease);
+}
+body.board-cards #board-table tr.board-row:hover{transform:translateY(-2px);box-shadow:var(--v4-glow-md)}
+body.board-cards #board-table tr.board-row>td{display:block;border:0;padding:2px 0;white-space:normal;min-width:0}
+body.board-cards #board-table tr.board-row>td.cell-name{grid-column:1/-1;font-size:15px;font-weight:700;color:#0f172a;padding-bottom:8px;border-bottom:1px dashed #e8eef6;margin-bottom:2px}
+body.board-cards #board-table tr.board-row>td.cell-type{grid-column:auto}
+body.board-cards #board-table tr.board-row>td.cell-actions{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;padding-top:8px;border-top:1px solid #eef2f7;margin-top:4px}
+body.board-cards #board-table tr.board-row>td.cell-platform::before{content:"平台 ";font-size:11px;color:#94a3b8}
+body.board-cards #board-table tr.board-row>td.cell-account::before{content:"账号 ";font-size:11px;color:#94a3b8}
+body.board-cards #board-table tr.board-row>td.cell-keepalive::before{content:"保活 ";font-size:11px;color:#94a3b8}
+body.board-cards #board-table tr.board-row>td.cell-expire::before{content:"到期 ";font-size:11px;color:#94a3b8}
+body.board-cards #board-table tr.board-row>td.cell-heartbeat::before{content:"心跳 ";font-size:11px;color:#94a3b8}
+body.board-cards #board-table tr.board-row>td.cell-heartbeat,body.board-cards #board-table tr.board-row>td.cell-expire{font-variant-numeric:tabular-nums;font-size:12.5px}
+body.board-cards .board-scroll-hint{display:none!important}
+
+/* ---- 空态 / 骨架：柔化 ---- */
+.board-empty,.ov-empty{color:#64748b}
+.board-skeleton{background:linear-gradient(90deg,#eef2f7 25%,#f8fafc 37%,#eef2f7 63%);background-size:400% 100%}
+
+/* ---- 动效降级 ---- */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001s!important;animation-delay:0s!important;transition-duration:.001s!important}
+}
+/* ---- 窄屏：卡片视图优先 ---- */
+@media (max-width:1100px){
+  .ov-status-body{gap:16px;padding:14px 16px 18px}
+  .ov-donut{width:112px;height:112px}
+  body.board-cards #board-table tbody{grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;padding:10px}
+}
+/* 保活中的状态点：呼吸脉冲（只在真正的 keeping 状态上亮） */
+.board-status-keeping .board-status-dot,.board-status-keeping_long .board-status-dot{
+  background:#22c55e;box-shadow:0 0 0 0 rgba(34,197,94,.5);animation:v4-pulse 2.2s infinite;
+}
+.board-status-managed .board-status-dot,.board-status-managed_stalled .board-status-dot{background:#6366f1}
+.board-status-idle .board-status-dot,.board-status-stopped .board-status-dot,.board-status-managed_off .board-status-dot{background:#cbd5e1}
+@media (prefers-reduced-motion:reduce){.board-status-keeping .board-status-dot,.board-status-keeping_long .board-status-dot{animation:none}}
+/* ---------- 卡片视图：顶部状态色带 + 右上角快捷开关（⚡保活 / 🛡️自动开机） ---------- */
+.v4-card-quick { display: none; }
+body.board-cards #board-table tr.board-row { position: relative; }
+body.board-cards #board-table tr.board-row::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px;
+  background: var(--v4-band, #cbd5e1); border-radius: 16px 16px 0 0;
+  box-shadow: 0 0 12px -2px var(--v4-band, transparent);
+}
+body.board-cards #board-table tr.board-row td.cell-name { padding-right: 88px; }
+body.board-cards .v4-card-quick {
+  display: flex; gap: 6px; position: absolute; top: 13px; right: 13px; z-index: 2;
+}
+.v4-quick-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 26px; padding: 0; font-size: 13px; line-height: 1;
+  border: 1px solid var(--ui-line, #e6ebf2); border-radius: 9px;
+  background: #fff; color: #64748b; cursor: pointer;
+  transition: transform .18s var(--v4-ease, ease), box-shadow .18s var(--v4-ease, ease),
+    background .18s var(--v4-ease, ease), color .18s var(--v4-ease, ease);
+}
+.v4-quick-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: var(--v4-glow-sm, 0 4px 12px rgba(15,23,42,.12)); }
+.v4-quick-btn.on {
+  color: #fff; border-color: transparent;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, .14);
+}
+.v4-quick-btn[data-quick="autoboot"].on {
+  background: linear-gradient(135deg, #6366f1, #3b82f6);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, .16);
+}
+.v4-quick-btn:disabled { opacity: .42; cursor: not-allowed; box-shadow: none; transform: none; }
+.v4-quick-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, .35); }
+@media (prefers-reduced-motion: reduce) {
+  .v4-quick-btn { transition: none; }
+  .v4-quick-btn:hover:not(:disabled) { transform: none; }
+}
+
+/* ------------------------------------------------ 阶段 9c · 总览图表（心跳/掉线与到期时间轴）
+ * 两张图都是手写 SVG（viewBox 1000 宽，随卡片自适应），这里只管容器与文字刻度。 */
+.ov-card-meta {
+  margin-left: auto;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ui-ink-3, #64748b);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 58%;
+  font-variant-numeric: tabular-nums;
+}
+.ov-chart { margin-top: 10px; min-height: 76px; }
+.ov-chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.ov-chart-axis {
+  font-size: 10.5px;
+  fill: #94a3b8;
+  font-variant-numeric: tabular-nums;
+  font-family: inherit;
+}
+.ov-chart-row {
+  font-size: 11.5px;
+  fill: #334155;
+  font-family: inherit;
+}
+.ov-chart-empty {
+  font-size: 12.5px;
+  color: #94a3b8;
+  padding: 18px 4px;
+  text-align: center;
+}
+@media (max-width: 900px) {
+  .ov-card-meta { max-width: 100%; margin-left: 0; white-space: normal; }
+}
+.ov-chart-far {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #e6ebf2;
+  font-size: 11.5px;
+  color: #64748b;
+  line-height: 1.6;
+}
+.ov-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: #64748b;
+}
+.ov-chart-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.ov-chart-legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  display: inline-block;
+}
+.board-inline-error td {
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 12.5px;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+/* ---------------- 资费页「怎么开通」：共享通道卡 + 弹窗 ---------------- */
+
+#tariff-howto { margin-bottom: 14px; }
+
+.tariff-howto-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+  padding: 0 18px 14px;
+}
+
+.tariff-howto-tile {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--ui-line, #e6ebf2);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .72);
+  transition: transform var(--v4-dur, .28s) var(--v4-ease, ease), box-shadow var(--v4-dur, .28s) var(--v4-ease, ease);
+}
+
+.tariff-howto-tile:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(15, 23, 42, .08); }
+.tariff-howto-icon { font-size: 20px; line-height: 1.2; }
+.tariff-howto-body { min-width: 0; }
+.tariff-howto-title { font-size: 13.5px; font-weight: 700; color: #0f172a; margin-bottom: 3px; }
+.tariff-howto-hint { font-size: 12.5px; line-height: 1.55; color: #64748b; }
+
+#tariff-table .cell-guide, #tc-table .cell-guide { text-align: right; white-space: nowrap; }
+.tc-guide-btn { font-size: 12px; padding: 0 10px; height: 26px; border-radius: 8px; }
+
+.tariff-guide-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 6px 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid var(--ui-line-soft, #f1f5f9);
+  margin-bottom: 12px;
+}
+
+.tariff-guide-row { display: flex; gap: 8px; font-size: 12.5px; line-height: 1.6; min-width: 0; }
+.tariff-guide-label { flex: 0 0 62px; color: #64748b; }
+.tariff-guide-value { color: #0f172a; word-break: break-word; }
+
+.tariff-guide-block { margin-bottom: 14px; }
+.tariff-guide-block-title { font-size: 12px; font-weight: 700; color: #475569; letter-spacing: .02em; margin-bottom: 6px; }
+
+.tariff-guide-note {
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: #334155;
+  white-space: pre-wrap;
+  background: #fff;
+  border: 1px solid var(--ui-line, #e6ebf2);
+  border-radius: 10px;
+  padding: 10px 12px;
+  max-height: 168px;
+  overflow: auto;
+}
+
+.tariff-guide-channels { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.tariff-guide-channel {
+  border: 1px solid var(--ui-line, #e6ebf2);
+  border-radius: 10px;
+  padding: 9px 12px;
+  background: #fff;
+}
+.tariff-guide-channel-head { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
+.tariff-guide-channel-name { font-size: 13px; font-weight: 600; color: #0f172a; }
+.tariff-guide-channel-hint { font-size: 12.5px; line-height: 1.55; color: #64748b; }
+.tariff-guide-flag { font-size: 11px; padding: 1px 7px; border-radius: 999px; background: #f1f5f9; color: #64748b; }
+.tariff-guide-flag.quoted { background: #ecfdf5; color: #047857; }
+
+.tariff-guide-steps { margin: 0; padding-left: 18px; font-size: 12.5px; line-height: 1.75; color: #334155; }
+.tariff-guide-steps li { margin-bottom: 4px; }
+
+.tariff-guide-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.tariff-guide-tel { text-decoration: none; display: inline-flex; align-items: center; }
+.tariff-guide-foot { margin-top: 10px; font-size: 11.5px; color: #94a3b8; line-height: 1.6; }
+
+/* 加了「办理」列之后，窄屏不能让 table-layout:fixed 把名称列压成一条线：锁最小宽度，交给外层横向滚动 */
+#tariff-table { min-width: 1080px; }
+#tc-table { min-width: 1140px; }
+#tariff-table .col-name, #tc-table .col-name { white-space: normal; word-break: break-word; }
+
+/* ---------------- 📱 话费页（中国移动 App 凭证只读账单） ---------------- */
+#billing-panel { display: none; }
+body.view-billing #billing-panel { display: block; }
+body.view-billing .tariff-tabs,
+body.view-billing #tariff-howto,
+body.view-billing #tariff-panel,
+body.view-billing #tariff-card-panel { display: none !important; }
+body.view-billing #instance-board,
+body.view-billing #overview-panel,
+body.view-billing #board-panel,
+body.view-billing #ops-panel,
+body.view-billing #main-section-header,
+body.view-billing #accounts-container { display: none !important; }
+
+.billing-kpis { margin: 0 0 16px; }
+.billing-kpi { position: relative; overflow: hidden; }
+.billing-kpi::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 3px 0 0 3px; }
+.billing-kpi-green::before { background: #22c55e; }
+.billing-kpi-amber::before { background: #f59e0b; }
+.billing-kpi-blue::before { background: #3b82f6; }
+.billing-kpi-violet::before { background: #8b5cf6; }
+
+.billing-list { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); margin-bottom: 18px; }
+.billing-card { background: #fff; border: 1px solid var(--ui-line, #e6ebf2); border-radius: 16px; padding: 16px 18px; box-shadow: 0 8px 24px rgba(15, 23, 42, .06); }
+.billing-card-bad { border-color: #fcd34d; background: #fffdf6; }
+.billing-card-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.billing-card-title { font-size: 14px; font-weight: 700; color: #0f172a; }
+.billing-card-phone { font-size: 12px; color: #64748b; font-variant-numeric: tabular-nums; }
+.billing-card-tag { margin-left: auto; font-size: 11px; color: #64748b; background: #f1f5f9; border-radius: 999px; padding: 2px 8px; }
+.billing-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; }
+.billing-metric { display: flex; flex-direction: column; gap: 2px; }
+.billing-metric-label { font-size: 11.5px; color: #64748b; }
+.billing-metric-value { font-size: 15px; font-weight: 650; color: #0f172a; font-variant-numeric: tabular-nums; }
+.billing-pkgs { margin-top: 12px; border-top: 1px dashed #e2e8f0; padding-top: 10px; display: grid; gap: 6px; }
+.billing-pkg { display: flex; align-items: baseline; gap: 8px; font-size: 12px; color: #475569; }
+.billing-pkg-type { min-width: 64px; color: #334155; }
+.billing-pkg-num { font-variant-numeric: tabular-nums; }
+.billing-pkg-remain { margin-left: auto; font-variant-numeric: tabular-nums; color: #0f766e; }
+.billing-card-err { font-size: 12.5px; color: #92400e; background: #fef3c7; border-radius: 10px; padding: 8px 10px; }
+.billing-card-foot { margin-top: 12px; display: flex; align-items: center; gap: 10px; font-size: 11.5px; color: #64748b; }
+.billing-card-foot span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.billing-del { margin-left: auto; flex: none; }
+.billing-empty { grid-column: 1 / -1; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 14px; padding: 20px; font-size: 13px; color: #475569; line-height: 1.7; }
+.billing-empty span { color: #64748b; font-size: 12px; }
+.billing-add { background: #fff; border: 1px solid var(--ui-line, #e6ebf2); border-radius: 16px; padding: 14px 18px; }
+.billing-add summary { cursor: pointer; font-size: 13.5px; font-weight: 650; color: #1e293b; }
+.billing-steps { margin: 12px 0; padding-left: 20px; font-size: 12.5px; color: #475569; line-height: 1.85; }
+.billing-steps code { background: #f1f5f9; border-radius: 5px; padding: 1px 5px; font-size: 11.5px; word-break: break-all; }
+.billing-add textarea { width: 100%; box-sizing: border-box; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; line-height: 1.5; border: 1px solid #d7dee9; border-radius: 10px; padding: 10px 12px; resize: vertical; margin-bottom: 10px; }
+.billing-add-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.billing-add-row input { flex: 1 1 220px; min-width: 0; height: 34px; border: 1px solid #d7dee9; border-radius: 10px; padding: 0 12px; font-size: 13px; }
+.billing-add-hint { margin-top: 8px; font-size: 12px; color: #64748b; }
+@media (max-width: 900px) {
+  .billing-list { grid-template-columns: 1fr; }
+}
+
+/* 公示里的短信指令：行内徽标 + 弹窗逐条列出 */
+.tc-sms-badge{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:6px;background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:.02em;vertical-align:1px;cursor:help;white-space:nowrap}
+.tariff-howto-sms{margin:2px 0 12px;padding:12px 14px;border:1px solid #dbeafe;border-radius:12px;background:linear-gradient(180deg,#f8fbff,#f2f7ff)}
+.tariff-howto-sms-title{font-size:12.5px;font-weight:700;color:#1e40af;margin-bottom:8px}
+.tariff-howto-sms-row{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.tariff-sms-chip{display:inline-block;padding:2px 8px;border-radius:7px;background:#fff;border:1px solid #bfdbfe;color:#1d4ed8;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;font-weight:700}
+.tariff-sms-chip em{font-style:normal;font-weight:500;color:#64748b;font-size:11px}
+.tariff-howto-sms-desc{font-size:12px;color:#475569}
+.tariff-guide-sms{display:flex;flex-direction:column;gap:8px}
+.tariff-guide-sms-row{display:grid;grid-template-columns:auto auto 1fr auto;align-items:center;gap:8px;padding:8px 10px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc}
+.tariff-guide-code{grid-row:1;padding:2px 8px;border-radius:7px;background:#0f172a;color:#e2e8f0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;font-weight:700}
+.tariff-guide-sms-tag{grid-row:1;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid transparent}
+.tariff-guide-sms-tag.cancel{background:#fef2f2;color:#b91c1c;border-color:#fecaca}
+.tariff-guide-sms-tag.order{background:#ecfdf5;color:#047857;border-color:#a7f3d0}
+.tariff-guide-sms-tag.other{background:#f1f5f9;color:#475569;border-color:#e2e8f0}
+.tariff-guide-sms-how{grid-row:1;font-size:12px;color:#475569}
+.tariff-guide-sms-quote{grid-column:1/-1;font-size:12px;line-height:1.6;color:#64748b;white-space:pre-wrap}
+.tariff-guide-sms-gap{padding:10px 12px;border-radius:10px;background:#fffbeb;border:1px solid #fde68a;color:#92400e;font-size:12.5px;line-height:1.7}
+.tariff-guide-links{margin:0;padding-left:18px;font-size:12.5px;line-height:1.9}
+.tariff-guide-links a{color:#1d4ed8;text-decoration:none;border-bottom:1px dashed #93c5fd}
+.tariff-guide-link-url{margin-left:6px;color:#94a3b8;font-size:11.5px;word-break:break-all}
+.tariff-guide-quotes{margin:0;padding-left:18px;font-size:12.5px;line-height:1.75;color:#334155}
+.tariff-guide-quotes li{margin-bottom:4px}
+
+
+#tariff-guide-modal .modal{max-height:calc(100vh - 64px);display:flex;flex-direction:column}
+#tariff-guide-modal .modal-body{overflow-y:auto;overscroll-behavior:contain}
+@media (max-width:900px){#tariff-guide-modal .modal{max-height:calc(100vh - 24px)}}
+
+
+/* 话费页：抓包指引（为什么 + 三平台步骤 + 常见坑） */
+.billing-why{margin:2px 0 14px;padding:12px 14px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0}
+.billing-why-title{font-size:12.5px;font-weight:700;color:#0f172a;margin-bottom:6px}
+.billing-why ul{margin:0;padding-left:18px}
+.billing-why li{font-size:12.5px;line-height:1.75;color:#475569;margin-bottom:5px}
+.billing-why code{background:#eef2ff;color:#3730a3;border-radius:5px;padding:1px 5px;font-size:11.5px}
+.billing-platforms{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin-bottom:12px}
+.billing-platform{padding:12px 14px;border-radius:12px;background:#fff;border:1px solid #e5e7eb}
+.billing-platform-title{font-size:12.5px;font-weight:700;color:#1e293b;margin-bottom:6px}
+.billing-platform ol{margin:0;padding-left:18px}
+.billing-platform li{font-size:12.5px;line-height:1.7;color:#475569;margin-bottom:4px}
+.billing-platform code{background:#f1f5f9;border-radius:5px;padding:1px 5px;font-size:11.5px;color:#334155}
+.billing-pitfalls{padding:10px 12px;border-radius:10px;background:#fffbeb;border:1px solid #fde68a;color:#92400e;font-size:12.5px;line-height:1.8}
+.billing-pitfalls code{background:#fef3c7;border-radius:5px;padding:1px 5px;font-size:11.5px}
+@media (max-width:900px){.billing-platforms{grid-template-columns:1fr}}
+
